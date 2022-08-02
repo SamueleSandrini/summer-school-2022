@@ -80,8 +80,9 @@ class RRT:
 
         # smooth the path
         if straighten:
-            for i in range(2):
-                path = self.halveAndTest(path)
+            success = True
+            while success:
+                path, success = self.halveAndTest(path)
 
         distance = 0.0
         for i in range(1, len(path)):
@@ -229,15 +230,10 @@ class RRT:
 
         neighborhood_points = self.getPointsInNeighborhood(point, neighborhood)
         for neighbor in neighborhood_points:
-
-            raise NotImplementedError('[STUDENTS TODO] Getting node parents in RRT* not implemented. You have to finish it.')
-            # Tips:
-            #  - look for neighbor which when connected yields minimal path cost all the way back to the start
-            #  - you might need functions 'self.tree.get_cost()' or 'distEuclidean()'
-
-            # TODO: fill these two variables
-            cost = float('inf') 
-            parent = closest_point
+            tmp_cost = self.tree.get_cost(neighbor) + distEuclidean(neighbor, point)
+            if tmp_cost<cost:
+                parent = neighbor
+                cost = tmp_cost
 
         return parent, cost
     # # #}
@@ -287,26 +283,38 @@ class RRT:
 
     # # #{ halveAndTest()
     def halveAndTest(self, path):
-        pt1 = path[0][0:3]
-        pt2 = path[-1][0:3]
-        
+
+        success = False
+
         if len(path) <= 2:
-            return path
+            return path, success
 
-        raise NotImplementedError('[STUDENTS TODO] RRT: path straightening is not finished. Finish it on your own.')
-        # Tips:
-        #  - divide the given path by a certain ratio and use this method recursively
+        pt1_idx = 0
+        pt2_idx = pt1_idx +2
 
-        if not self.validateLinePath(pt1, pt2, check_bounds=False):
-            
-            # [STUDENTS TODO] Replace seg1 and seg2 variables effectively
-            seg1 = path[:1]
-            seg2 = path[1:]
+        ok = True
+        while ok:
+            if pt2_idx >= len(path):
+                break
 
-            seg1.extend(seg2)
-            return seg1
-        
-        return [path[0], path[-1]]
+            pt1 = path[pt1_idx][0:3]
+            pt2 = path[pt2_idx][0:3]
+
+            if self.validateLinePath(pt1, pt2, check_bounds=False):
+                print("Shortening")
+                success = True
+
+                # [STUDENTS TODO] Replace seg1 and seg2 variables effectively
+                seg1 = path[:pt1_idx+1]
+                seg2 = path[pt2_idx:]
+
+                seg1.extend(seg2)
+                path = seg1
+
+            pt1_idx += 1
+            pt2_idx = pt1_idx + 2
+
+        return path, success
     # # #}
 
 # # #}
