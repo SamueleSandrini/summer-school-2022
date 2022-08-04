@@ -6,6 +6,7 @@ Various types of TSP utilizing local planners for distance estimation and path p
 import numpy as np
 
 from random import randint
+import concurrent.futures
 
 from sklearn.cluster import KMeans
 from scipy.spatial.kdtree import KDTree
@@ -99,28 +100,46 @@ class TSPSolver3D():
         self.paths = {}
 
         # find path between each pair of goals (a, b)
-        for a in range(n):
-            for b in range(n):
-                if a == b:
-                    continue
+        threads = []
+        with concurrent.futures.ThreadPoolExecutor(max_workers=50) as executor:
 
-                # [STUDENTS TODO]
-                #   - Play with distance estimates in TSP (tsp/distance_estimates parameter in config) and see how it influences the solution
-                #   - You will probably see that computing for all poses from both sets takes a long time.
-                #   - Think if you can limit the number of computations or decide which distance-estimating method use for each point-pair.
+            for a in range(n):
+                for b in range(n):
+                    if a == b:
+                        continue
 
-                # get poses of the viewpoints
-                g1 = viewpoints[a].pose
-                g2 = viewpoints[b].pose
+                    # [STUDENTS TODO]
+                    #   - Play with distance estimates in TSP (tsp/distance_estimates parameter in config) and see how it influences the solution
+                    #   - You will probably see that computing for all poses from both sets takes a long time.
+                    #   - Think if you can limit the number of computations or decide which distance-estimating method use for each point-pair.
 
-                # estimate distances between the viewpoints
-                path, distance = self.compute_path(g1, g2, path_planner, path_planner['distance_estimation_method'])
+                    # get poses of the viewpoints
+                    g1 = viewpoints[a].pose
+                    g2 = viewpoints[b].pose
 
-                # store paths/distances in matrices
-                self.paths[(a, b)]   = path
-                self.distances[a][b] = distance
+                    # estimate distances between the viewpoints
+                    threads.append(executor.submit(self.compute_path,g1, g2, path_planner, path_planner['distance_estimation_method']))
 
+            ii = -1
+            for a in range(n):
+                for b in range(n):
+                    if a == b:
+                        continue
+
+                    ii +=1
+                    path, distance = threads[ii].result()
+
+                    self.paths[(a, b)] = path
+                    self.distances[a][b] = distance
+
+
+                    #path, distance = self.compute_path(g1, g2, path_planner, path_planner['distance_estimation_method'])
+
+                    # store paths/distances in matrices
+                    #self.paths[(a, b)]   = path
+                   # self.distances[a][b] = distance
         # compute TSP tour
+
         path = self.compute_tsp_tour(viewpoints, path_planner)
 
         return path
@@ -199,6 +218,8 @@ class TSPSolver3D():
             b = (a + 1) % n
             a_idx       = sequence[a]
             b_idx       = sequence[b]
+
+
 
             # if the paths are already computed
             if path_planner['distance_estimation_method'] == path_planner['path_planning_method']:

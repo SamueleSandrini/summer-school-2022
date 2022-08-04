@@ -301,7 +301,6 @@ class RRT:
             pt2 = path[pt2_idx][0:3]
 
             if self.validateLinePath(pt1, pt2, check_bounds=False):
-                print("Shortening")
                 success = True
 
                 # [STUDENTS TODO] Replace seg1 and seg2 variables effectively
