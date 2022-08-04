@@ -7,6 +7,7 @@ from turtle import distance
 import numpy as np
 
 from random import randint
+import concurrent.futures
 
 from sklearn.cluster import KMeans
 from scipy.spatial.kdtree import KDTree
@@ -100,28 +101,50 @@ class TSPSolver3D():
         self.paths = {}
 
         # find path between each pair of goals (a, b)
-        for a in range(n):
-            for b in range(n):
-                if a == b:
-                    continue
+        threads = []
+        with concurrent.futures.ThreadPoolExecutor(max_workers=50000) as executor:
+            print("Dimensione n: {}".format(n))
+            for a in range(n):
+                for b in range(n):
+                    if a == b:
+                        continue
 
-                # [STUDENTS TODO]
-                #   - Play with distance estimates in TSP (tsp/distance_estimates parameter in config) and see how it influences the solution
-                #   - You will probably see that computing for all poses from both sets takes a long time.
-                #   - Think if you can limit the number of computations or decide which distance-estimating method use for each point-pair.
+                    # [STUDENTS TODO]
+                    #   - Play with distance estimates in TSP (tsp/distance_estimates parameter in config) and see how it influences the solution
+                    #   - You will probably see that computing for all poses from both sets takes a long time.
+                    #   - Think if you can limit the number of computations or decide which distance-estimating method use for each point-pair.
 
-                # get poses of the viewpoints
-                g1 = viewpoints[a].pose
-                g2 = viewpoints[b].pose
+                    # get poses of the viewpoints
+                    g1 = viewpoints[a].pose
+                    g2 = viewpoints[b].pose
 
-                # estimate distances between the viewpoints
-                path, distance = self.compute_path(g1, g2, path_planner, path_planner['distance_estimation_method'])
+                    # estimate distances between the viewpoints
+                    #         threads.append(executor.submit(self.compute_path,g1, g2, path_planner, path_planner['distance_estimation_method']))
+                    #
+                    # print("Dimensione del thread: {}".format(len(threads)) )
+                    # ii = -1
+                    # for a in range(n):
+                    #     for b in range(n):
+                    #         if a == b:
+                    #             continue
+                    #
+                    #         ii +=1
+                    #         path, distance = threads[ii].result()
 
-                # store paths/distances in matrices
-                self.paths[(a, b)]   = path
-                self.distances[a][b] = distance
+                    # print("a "+str(a)+ " b"+str(b))
+                    # print(np.shape(self.distances))
+                    #
+                    # self.paths[(a, b)] = path
+                    # self.distances[a][b] = distance
 
+
+                    path, distance = self.compute_path(g1, g2, path_planner, path_planner['distance_estimation_method'])
+
+                    # store paths/distances in matrices
+                    self.paths[(a, b)]   = path
+                    self.distances[a][b] = distance
         # compute TSP tour
+
         path = self.compute_tsp_tour(viewpoints, path_planner)
 
         return path
@@ -195,11 +218,17 @@ class TSPSolver3D():
 
         path = []
         n    = len(self.distances)
-
+        print(self.distances)
+        print("Nuovo N: {}".format(n))
+        print("LEN VIEW: {}".format(len(viewpoints)))
+        print(viewpoints[0])
         for a in range(n):
             b = (a + 1) % n
             a_idx       = sequence[a]
             b_idx       = sequence[b]
+
+            print("A_IDX "+str(a_idx)+ " B_IDX "+str(b_idx))
+            print("VIEWPOINTS LEN "+str(len(viewpoints)))
 
             # if the paths are already computed
             if path_planner['distance_estimation_method'] == path_planner['path_planning_method']:
