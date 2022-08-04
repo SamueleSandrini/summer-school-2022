@@ -218,14 +218,17 @@ class TSPSolver3D():
 
         path = []
         n    = len(self.distances)
+        print(self.distances)
         print("Nuovo N: {}".format(n))
-
+        print("LEN VIEW: {}".format(len(viewpoints)))
+        print(viewpoints[0])
         for a in range(n):
             b = (a + 1) % n
             a_idx       = sequence[a]
             b_idx       = sequence[b]
 
-
+            print("A_IDX "+str(a_idx)+ " B_IDX "+str(b_idx))
+            print("VIEWPOINTS LEN "+str(len(viewpoints)))
 
             # if the paths are already computed
             if path_planner['distance_estimation_method'] == path_planner['path_planning_method']:
