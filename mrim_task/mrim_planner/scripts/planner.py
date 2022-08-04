@@ -8,6 +8,8 @@ import rospy, rospkg
 import numpy as np
 
 from utils import *
+from threading import Thread
+import concurrent.futures
 
 from solvers.tsp_solvers import *
 from trajectory import Trajectory, TrajectoryUtils
@@ -121,6 +123,9 @@ class MrimPlanner:
         rospy.spin()
     # # #}
 
+    def threadFcn(self, tsp_solver,problem, viewpoints):
+        return tsp_solver.plan_tour(problem, viewpoints, self._path_planner)
+
     # # #{ planTrajectories()
     def planTrajectories(self, problem):
 
@@ -187,15 +192,28 @@ class MrimPlanner:
         print('[PLANNING TSP TOUR]')
 
         waypoints = []
-        for i in range(problem.number_of_robots):
+        threads = []
 
-            ## | --------------- Plan tour with a TSP solver -------------- |
-            robot_waypoints = tsp_solver.plan_tour(problem, viewpoints[i], self._path_planner) # find decoupled TSP tour over viewpoints
-            waypoints.append(robot_waypoints)
+        with concurrent.futures.ThreadPoolExecutor(max_workers=50000) as executor:
 
-            ## | ------------- add waypoints to visualization ------------- |
-            plotter.addWaypoints(robot_waypoints, color=COLORS[i], lw=1.2, label='traj (id: ' + str(problem.robot_ids[i]) + ')')
-        # # #}
+            for i in range(problem.number_of_robots):
+                threads.append(executor.submit(self.threadFcn,tsp_solver,problem,viewpoints[i]))
+
+            for i in range(problem.number_of_robots):
+                robot_waypoints = threads[i].result()
+                waypoints.append(robot_waypoints)
+                plotter.addWaypoints(robot_waypoints, color=COLORS[i], lw=1.2, label='traj (id: ' + str(problem.robot_ids[i]) + ')')
+
+
+        # for i in range(problem.number_of_robots):
+        #
+        #     ## | --------------- Plan tour with a TSP solver -------------- |
+        #     robot_waypoints = tsp_solver.plan_tour(problem, viewpoints[i], self._path_planner) # find decoupled TSP tour over viewpoints
+        #     waypoints.append(robot_waypoints)
+        #
+        #     ## | ------------- add waypoints to visualization ------------- |
+        #     plotter.addWaypoints(robot_waypoints, color=COLORS[i], lw=1.2, label='traj (id: ' + str(problem.robot_ids[i]) + ')')
+        # # # #}
 
         # # #{ Sample waypoints to trajectories
         trajectories     = []
