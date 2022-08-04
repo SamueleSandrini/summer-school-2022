@@ -3,6 +3,7 @@ Various types of TSP utilizing local planners for distance estimation and path p
 @author: P. Petracek & V. Kratky & P.Vana & P.Cizek & R.Penicka
 """
 
+from turtle import distance
 import numpy as np
 
 from random import randint
@@ -292,20 +293,39 @@ class TSPSolver3D():
         ## | ------------------- K-Means clustering ------------------- |
         if method == 'kmeans':
             # Prepare positions of the viewpoints in the world
+            print("Number of viewpoints inside clustering: {}".format(len(viewpoints)))
+            ###############
+
             positions = np.array([vp.pose.point.asList() for vp in viewpoints])
 
-            raise NotImplementedError('[STUDENTS TODO] KMeans clustering of viewpoints not implemented. You have to finish it on your own')
+            kmeans = KMeans(n_clusters=k, random_state=0).fit(positions)
+            labels = kmeans.labels_
+            distance_first_agent = []
+            # print(kmeans.labels_)
+            first_agent = 0
+            for cluster_number in range(0,k):
+                distance_first_agent.append(np.linalg.norm([problem.start_poses[first_agent].position.x,problem.start_poses[first_agent].position.y,problem.start_poses[first_agent].position.z] - kmeans.cluster_centers_[cluster_number]))
+            id_min = np.argmin(distance_first_agent)
+
+
+            redifined_label = np.ones((len(labels)),int)
+            redifined_label[labels==id_min] = first_agent 
+            labels = redifined_label.tolist()
+            print(labels)
+
+
+            # raise NotImplementedError('[STUDENTS TODO] KMeans clustering of viewpoints not implemented. You have to finish it on your own')
             # Tips:
             #  - utilize sklearn.cluster.KMeans implementation (https://scikit-learn.org/stable/modules/generated/sklearn.cluster.KMeans.html)
             #  - after finding the labels, you may want to swap the classes (e.g., by looking at the distance of the UAVs from the cluster centers)
 
             # TODO: fill 1D list 'labels' of size len(viewpoints) with indices of the robots
-            labels = [randint(0, k - 1) for vp in viewpoints]
+            #labels = [randint(0, k - 1) for vp in viewpoints]
 
         ## | -------------------- Random clustering ------------------- |
         else:
             labels = [randint(0, k - 1) for vp in viewpoints]
-
+            
         # Store as clusters (2D array of viewpoints)
         clusters = []
         for r in range(k):
