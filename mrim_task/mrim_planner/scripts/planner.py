@@ -126,8 +126,6 @@ class MrimPlanner:
     # # #}
 
     def threadFcn(self, tsp_solver,problem, viewpoints):
-        print("parallel plan tour")
-        time.sleep(1)
         return tsp_solver.plan_tour(problem, viewpoints, self._path_planner)
 
 
@@ -197,7 +195,7 @@ class MrimPlanner:
         waypoints = []
         threads = []
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=50000) as executor:
 
             for i in range(problem.number_of_robots):
                     threads.append(executor.submit(self.threadFcn,tsp_solver,problem,viewpoints[i]))
