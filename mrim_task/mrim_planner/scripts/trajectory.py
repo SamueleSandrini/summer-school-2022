@@ -451,13 +451,18 @@ class TrajectoryUtils():
 
             sampling_step = trajectory.dT
 
+            duration = toppra_trajectory.duration
+            samples = toppra_trajectory.eval(np.arange(0,duration,sampling_step))
+            for idx,sample in enumerate(samples):
+                samples[idx][-1] = wrapAngle(sample[-1])
+
             # STUDENTS TODO: Sample the path parametrization 'toppra_trajectory' (instance of TOPPRA library).
-            raise NotImplementedError('[STUDENTS TODO] Trajectory sampling not finished. You have to implement it on your own.')
+            # raise NotImplementedError('[STUDENTS TODO] Trajectory sampling not finished. You have to implement it on your own.')
             # Tips:
             #  - check documentation for TOPPRA (look for eval() function): https://hungpham2511.github.io/toppra/index.html
             #  - use 'toppra_trajectory' and the predefined sampling step 'sampling_step'
 
-            samples = [] # [STUDENTS TODO] Fill this variable with trajectory samples
+            # samples = [] # [STUDENTS TODO] Fill this variable with trajectory samples
 
             # Convert to Trajectory class
             poses      = [Pose(q[0], q[1], q[2], q[3]) for q in samples]
